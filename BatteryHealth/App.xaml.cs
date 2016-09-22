@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BatteryHealth.Views;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -63,6 +64,8 @@ namespace BatteryHealth
 
                 // Place the frame in the current Window
                 Window.Current.Content = rootFrame;
+
+                rootFrame.Navigate(typeof(OverviewPage));
             }
 
             if (e.PrelaunchActivated == false)
