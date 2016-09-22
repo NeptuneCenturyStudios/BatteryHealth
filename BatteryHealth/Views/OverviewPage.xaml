@@ -9,6 +9,21 @@
     Loaded="Page_Loaded">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        
+        <Grid Background="{ThemeResource AppBarBackgroundThemeBrush}" Padding="12">
 
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            
+            <!--Battery indicator-->
+            <TextBlock Grid.Row="0" FontFamily="{ThemeResource SymbolThemeFontFamily}" FontSize="56" Text="&#xEBA7;" />
+            <!--Status text-->
+            <TextBlock Grid.Row="1" Text="Discharging" />
+        </Grid>
     </Grid>
 </Page>
