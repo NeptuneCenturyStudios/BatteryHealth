@@ -1,29 +1,100 @@
 ﻿<Page
-    x:Class="BatteryHealth.Views.OverviewPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:BatteryHealth.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Models="using:BatteryHealth.Models"
+    xmlns:Notification="using:Syncfusion.UI.Xaml.Controls.Notification"
+    xmlns:Charts="using:Syncfusion.UI.Xaml.Charts"
+    x:Class="BatteryHealth.Views.OverviewPage"
     mc:Ignorable="d"
     Loaded="Page_Loaded">
+
+    <Page.DataContext>
+        <Models:OverviewPageViewModel/>
+    </Page.DataContext>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        
+
+        <!--Briefing-->
         <Grid Background="{ThemeResource AppBarBackgroundThemeBrush}" Padding="12">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
-            
+
             <!--Battery indicator-->
-            <TextBlock Grid.Row="0" FontFamily="{ThemeResource SymbolThemeFontFamily}" FontSize="56" Text="&#xEBA7;" />
-            <!--Status text-->
-            <TextBlock Grid.Row="1" Text="Discharging" />
+            <TextBlock Grid.Row="0"
+                       Text="{Binding AggregateBatteryIndicator}" 
+                       FontFamily="{ThemeResource SymbolThemeFontFamily}" 
+                       FontSize="56" />
+            
+            <!--Percent-->
+            <TextBlock Grid.Row="1">
+                <Run Text="{Binding FormattedAggregateStatus}" />
+                <Run Text="{Binding FormattedAggregatePercent}" />
+            </TextBlock>
+            
         </Grid>
+        
+        <!--Some graphs-->
+        <Grid Grid.Row="1" Padding="12">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+
+            <!--Battery condition report-->
+            <TextBlock Grid.Row="0"
+                       HorizontalAlignment="Center"
+                       Text="{Binding EfficiencyIndicator.Symbol}"
+                       Foreground="{Binding EfficiencyIndicator.Foreground}"
+                       FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                       FontSize="48" />
+
+            <TextBlock Grid.Row="1"
+                       HorizontalAlignment="Center"
+                       Text="{Binding EfficiencyIndicator.Label}"
+                       Foreground="{Binding EfficiencyIndicator.Foreground}"
+                       FontSize="24" />
+
+            <TextBlock Grid.Row="2"
+                       Text="{Binding EfficiencyStatus}" 
+                       TextWrapping="WrapWholeWords"/>
+
+
+            <!--Charge progress against designed capacity-->
+            <Notification:SfProgressBar Grid.Row="3"
+                                        Maximum="{Binding AggregateDesignCap}"
+                                        Value="{Binding AggregateRemainingCap}" />
+
+            
+            
+            <!--<Charts:SfChart>
+                <Charts:DoughnutSeries ItemsSource="{Binding AggregateDetails}"
+                                   DoughnutCoefficient="0.7"
+                                   XBindingPath="Name"
+                                   YBindingPath="Value"
+                                   Palette="BlueChrome">
+
+                    <Charts:DoughnutSeries.AdornmentsInfo>
+                        <Charts:ChartAdornmentInfo ShowLabel="True" ShowMarker="true" />
+                    </Charts:DoughnutSeries.AdornmentsInfo>
+                    
+                </Charts:DoughnutSeries>
+
+            </Charts:SfChart>-->
+            
+        </Grid>
+        
     </Grid>
 </Page>
