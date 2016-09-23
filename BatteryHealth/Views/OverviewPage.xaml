@@ -7,6 +7,7 @@
     xmlns:Models="using:BatteryHealth.Models"
     xmlns:Notification="using:Syncfusion.UI.Xaml.Controls.Notification"
     xmlns:Charts="using:Syncfusion.UI.Xaml.Charts"
+    xmlns:Converters="using:BatteryHealth.Converters" 
     x:Class="BatteryHealth.Views.OverviewPage"
     mc:Ignorable="d"
     Loaded="Page_Loaded">
@@ -15,86 +16,189 @@
         <Models:OverviewPageViewModel/>
     </Page.DataContext>
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <Page.Resources>
+        <Converters:StringFormatConverter x:Name="StringFormatConverter" />
+        <Converters:VisibilityConverter x:Name="VisibilityConverter" />
+    </Page.Resources>
+    
+    
+    <ScrollViewer>
 
-        <!--Briefing-->
-        <Grid Background="{ThemeResource AppBarBackgroundThemeBrush}" Padding="12">
-
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+
             </Grid.RowDefinitions>
 
-            <!--Battery indicator-->
-            <TextBlock Grid.Row="0"
-                       Text="{Binding AggregateBatteryIndicator}" 
+            <!--Briefing-->
+            <Grid Grid.Row="0"
+              Padding="12"
+              Background="{ThemeResource AppBarItemPointerOverBackgroundThemeBrush}" >
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!--Header-->
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Battery Health" FontSize="24" Margin="0,12,0,12"/>
+
+                <!--Battery indicator-->
+                <TextBlock Grid.Row="1"
+                       Grid.Column="0"
+                       Text="{Binding BatteryIndicator}" 
                        FontFamily="{ThemeResource SymbolThemeFontFamily}" 
                        FontSize="56" />
-            
-            <!--Percent-->
-            <TextBlock Grid.Row="1">
-                <Run Text="{Binding FormattedAggregateStatus}" />
-                <Run Text="{Binding FormattedAggregatePercent}" />
-            </TextBlock>
-            
-        </Grid>
-        
-        <!--Some graphs-->
-        <Grid Grid.Row="1" Padding="12">
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
-            </Grid.RowDefinitions>
+                <TextBlock Grid.Row="1"
+                       Grid.Column="1"
+                       TextWrapping="WrapWholeWords"
+                       Margin="12,0,0,0">
+                <Run Text="Design capacity: " />
+                <Run Text="{Binding DesignCap, Converter={StaticResource StringFormatConverter}, ConverterParameter='\{0\} mWh'}" />
+                
+                <LineBreak/>
+                <Run Text="Full capacity: " />
+                <Run Text="{Binding FullChargeCap, Converter={StaticResource StringFormatConverter}, ConverterParameter='\{0\} mWh'}" />
 
-            <!--Battery condition report-->
-            <TextBlock Grid.Row="0"
-                       HorizontalAlignment="Center"
-                       Text="{Binding EfficiencyIndicator.Symbol}"
-                       Foreground="{Binding EfficiencyIndicator.Foreground}"
-                       FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                       FontSize="48" />
+                </TextBlock>
 
-            <TextBlock Grid.Row="1"
-                       HorizontalAlignment="Center"
-                       Text="{Binding EfficiencyIndicator.Label}"
-                       Foreground="{Binding EfficiencyIndicator.Foreground}"
-                       FontSize="24" />
+                <!--Percent-->
+                <Grid Grid.Row="2"
+                  Grid.ColumnSpan="2">
 
-            <TextBlock Grid.Row="2"
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!--Status text-->
+                    <TextBlock Grid.Row="0"
+                           Grid.ColumnSpan="2"
+                           Margin="0,0,0,8">
+                    
+                    <Run Text="{Binding FormattedStatus}" />
+                    <Run Text="{Binding EffectivePercentRemaining, Converter={StaticResource StringFormatConverter}, ConverterParameter='({0:P2})'}" />
+                    </TextBlock>
+
+                    <!--Progress against design capacity-->
+                    <ProgressBar Grid.Row="1"
+                             Grid.Column="0"
+                             Maximum="{Binding DesignCap}"
+                             Value="{Binding RemainingCap}"
+                             Height="24"
+                             Visibility="{Binding DesignCap, Converter={StaticResource VisibilityConverter}}"/>
+
+                    <TextBlock Grid.Row="1"
+                           Grid.Column="1"
+                           VerticalAlignment="Center"
+                           Margin="4,0,0,0"
+                           Text="{Binding PercentRemaining, Converter={StaticResource StringFormatConverter}, ConverterParameter='\{0:P2\}'}" 
+                           Visibility="{Binding DesignCap, Converter={StaticResource VisibilityConverter}}"/>
+                </Grid>
+
+
+            </Grid>
+
+            <!--Battery status-->
+            <Grid Grid.Row="1" 
+              Padding="12"
+              BorderThickness="0,1"
+              BorderBrush="{ThemeResource AppBarSeparatorForegroundThemeBrush}"
+              Background="{ThemeResource AppBarBackgroundThemeBrush}"
+              Visibility="{Binding DesignCap, Converter={StaticResource VisibilityConverter}}">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!--Battery condition report-->
+                <StackPanel Grid.Row="0"
+                        Grid.Column="0"
+                        >
+
+                    <TextBlock HorizontalAlignment="Center"
+                           Text="{Binding EfficiencyIndicator.Symbol}"
+                           Foreground="{Binding EfficiencyIndicator.Foreground}"
+                           FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                           FontSize="48" />
+
+                    <TextBlock HorizontalAlignment="Center"
+                           Text="{Binding EfficiencyIndicator.Label}"
+                           Foreground="{Binding EfficiencyIndicator.Foreground}"
+                           FontSize="24" />
+                </StackPanel>
+
+                <TextBlock Grid.Row="0"
+                       Grid.Column="1"
+                       Margin="12,0,0,0"
                        Text="{Binding EfficiencyStatus}" 
                        TextWrapping="WrapWholeWords"/>
 
 
-            <!--Charge progress against designed capacity-->
-            <Notification:SfProgressBar Grid.Row="3"
-                                        Maximum="{Binding AggregateDesignCap}"
-                                        Value="{Binding AggregateRemainingCap}" />
 
-            
-            
-            <!--<Charts:SfChart>
-                <Charts:DoughnutSeries ItemsSource="{Binding AggregateDetails}"
-                                   DoughnutCoefficient="0.7"
-                                   XBindingPath="Name"
-                                   YBindingPath="Value"
-                                   Palette="BlueChrome">
 
-                    <Charts:DoughnutSeries.AdornmentsInfo>
-                        <Charts:ChartAdornmentInfo ShowLabel="True" ShowMarker="true" />
-                    </Charts:DoughnutSeries.AdornmentsInfo>
-                    
-                </Charts:DoughnutSeries>
+            </Grid>
 
-            </Charts:SfChart>-->
-            
+            <!--Battery charge-->
+            <Grid Grid.Row="2"
+              Padding="12">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+
+                <!--Header-->
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,12" >
+                    <Run Text="Charge Rate" FontSize="24" />
+                    <Run Text="{Binding ChargeRate, Converter={StaticResource StringFormatConverter}, ConverterParameter='({0} mW)'}" />
+                </TextBlock>
+
+                <!--Charge rate chart-->
+                <Charts:SfChart Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" AreaBorderThickness="0,0.5,0.5,0">
+
+                    <Charts:SfChart.PrimaryAxis>
+                        <Charts:CategoryAxis x:Name="XAxis" EnableScrollBarResizing="False" EnableTouchMode="True" 
+                                         EnableScrollBar="True" Header="Time" LabelFormat="HH:mm:ss" 
+                                         EdgeLabelsDrawingMode="Fit"/>
+                    </Charts:SfChart.PrimaryAxis>
+
+                    <Charts:SfChart.SecondaryAxis>
+                        <Charts:NumericalAxis x:Name="SecondaryAxis" Interval="{Binding ChartInterval}" Minimum="{Binding NegativeDesignCap}" Maximum="{Binding DesignCap}" 
+                                          Header="Charge Rate (mW)">
+
+                        </Charts:NumericalAxis>
+                    </Charts:SfChart.SecondaryAxis>
+
+                    <Charts:SplineSeries StrokeThickness="2" 
+                                     ItemsSource="{Binding ChargeData}" 
+                                     XBindingPath="Time"
+                                     YBindingPath="Value"/>
+                </Charts:SfChart>
+            </Grid>
+
         </Grid>
-        
-    </Grid>
+    </ScrollViewer>
 </Page>

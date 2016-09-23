@@ -95,7 +95,10 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Converters\StringFormatConverter.cs" />
+    <Compile Include="Converters\VisibilityConverter.cs" />
     <Compile Include="DataModels\BatteryDetail.cs" />
+    <Compile Include="DataModels\ChargeDetail.cs" />
     <Compile Include="DataModels\Indicator.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

@@ -1,16 +1,10 @@
 ﻿using BatteryHealth.DataModels;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Power;
 using Windows.UI;
-using Windows.UI.Core;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media;
 
 namespace BatteryHealth.Models
@@ -26,155 +20,215 @@ namespace BatteryHealth.Models
 
         #region Properties
 
-        public ObservableCollection<Battery> BatteryDevices = new ObservableCollection<Battery>();
+        /// <summary>
+        /// Gets the battery devices on the device
+        /// </summary>
+        public ObservableCollection<Battery> BatteryDevices { get; set; } = new ObservableCollection<Battery>();
 
-        private BatteryDetail[] _aggregateDetails;
-        public BatteryDetail[] AggregateDetails
+        /// <summary>
+        /// Gets a collection of charge data
+        /// </summary>
+        public ObservableCollection<ChargeDetail> ChargeData { get; set; } = new ObservableCollection<ChargeDetail>();
+
+
+        private int? _designCap;
+        /// <summary>
+        /// Gets the design capacity of the battery (mWh)
+        /// </summary>
+        public int? DesignCap
         {
-            get { return _aggregateDetails; }
-            set
+            get { return _designCap; }
+            protected set
             {
-                _aggregateDetails = value;
+                _designCap = value;
                 // Notify change
-                OnPropertyChanged(nameof(AggregateDetails));
+                OnPropertyChanged(nameof(DesignCap));
+                OnPropertyChanged(nameof(PercentRemaining));
             }
         }
 
-        //private BatteryReport _aggregateReport;
-        ///// <summary>
-        /////  Gets or sets the aggregate battery report
-        ///// </summary>
-        //public BatteryReport AggregateReport
-        //{
-        //    get { return _aggregateReport; }
-        //    set
-        //    {
-        //        _aggregateReport = value;
-        //        // Notify change
-        //        OnPropertyChanged(nameof(AggregateReport));
-        //    }
-        //}
-
-        private int? _aggregateDesignCap;
-
-        public int? AggregateDesignCap
+        /// <summary>
+        /// Gets the max negative design capacity
+        /// </summary>
+        public int? NegativeDesignCap
         {
-            get { return _aggregateDesignCap; }
-            set
-            {
-                _aggregateDesignCap = value;
-                // Notify change
-                OnPropertyChanged(nameof(AggregateDesignCap));
-            }
+            get { return -DesignCap; }
         }
 
-        private int? _aggregateFullChargeCap;
-
-        public int? AggregateFullChargeCap
+        /// <summary>
+        /// Gets the chart interval based on design capacity
+        /// </summary>
+        public int? ChartInterval
         {
-            get { return _aggregateFullChargeCap; }
-            set
-            {
-                _aggregateFullChargeCap = value;
-                // Notify change
-                OnPropertyChanged(nameof(AggregateFullChargeCap));
-            }
+            get { return (DesignCap - NegativeDesignCap) / 10; }
         }
 
-
-        private int? _aggregateRemainingCap;
-
-        public int? AggregateRemainingCap
+        private int? _fullChargeCap;
+        /// <summary>
+        /// Gets the full charge capacity of the battery (mWh)
+        /// </summary>
+        public int? FullChargeCap
         {
-            get { return _aggregateRemainingCap; }
-            set
+            get { return _fullChargeCap; }
+            protected set
             {
-                _aggregateRemainingCap = value;
+                _fullChargeCap = value;
                 // Notify change
-                OnPropertyChanged(nameof(AggregateRemainingCap));
-
-            }
-        }
-
-        private Windows.System.Power.BatteryStatus _aggregateStatus;
-
-        public Windows.System.Power.BatteryStatus AggregateStatus
-        {
-            get { return _aggregateStatus; }
-            set
-            {
-                _aggregateStatus = value;
-                // Notify change
-                OnPropertyChanged(nameof(AggregateStatus));
+                OnPropertyChanged(nameof(FullChargeCap));
+                OnPropertyChanged(nameof(EffectivePercentRemaining));
+                OnPropertyChanged(nameof(BatteryIndicator));
             }
         }
 
 
-        private string _formattedAggregateStatus;
+        private int? _remainingCap;
+        /// <summary>
+        /// Gets the remaining capacity
+        /// </summary>
+        public int? RemainingCap
+        {
+            get { return _remainingCap; }
+            protected set
+            {
+                _remainingCap = value;
+                // Notify change
+                OnPropertyChanged(nameof(RemainingCap));
+                OnPropertyChanged(nameof(PercentRemaining));
+                OnPropertyChanged(nameof(EffectivePercentRemaining));
+                OnPropertyChanged(nameof(BatteryIndicator));
+            }
+        }
+
+        private int? _chargeRate;
+        /// <summary>
+        /// Gets the charge rate
+        /// </summary>
+        public int? ChargeRate
+        {
+            get { return _chargeRate; }
+            protected set
+            {
+                _chargeRate = value;
+                // Notify change
+                OnPropertyChanged(nameof(ChargeRate));
+            }
+        }
+
+
+        private Windows.System.Power.BatteryStatus _batteryStatus;
+        /// <summary>
+        /// Gets or sets the battery status
+        /// </summary>
+        private Windows.System.Power.BatteryStatus BatteryStatus
+        {
+            get { return _batteryStatus; }
+            set
+            {
+                _batteryStatus = value;
+                // Notify change
+                OnPropertyChanged(nameof(FormattedStatus));
+            }
+        }
+
         /// <summary>
         /// Gets or sets the aggregate status
         /// </summary>
-        public string FormattedAggregateStatus
+        public string FormattedStatus
         {
-            get { return _formattedAggregateStatus; }
-            set
+            get
             {
-                _formattedAggregateStatus = value;
-                // Notify change
-                OnPropertyChanged(nameof(FormattedAggregateStatus));
+                string formattedStatus;
+                // Determine status
+                switch (BatteryStatus)
+                {
+                    case Windows.System.Power.BatteryStatus.Charging:
+                        formattedStatus = "Charging";
+                        break;
+
+                    case Windows.System.Power.BatteryStatus.Discharging:
+                        formattedStatus = "Discharging";
+                        break;
+
+                    case Windows.System.Power.BatteryStatus.Idle:
+                        formattedStatus = "Not Charging";
+                        break;
+
+                    case Windows.System.Power.BatteryStatus.NotPresent:
+                        formattedStatus = "Not Present";
+                        break;
+
+                    default:
+                        formattedStatus = "Unknown";
+                        break;
+                }
+
+                return formattedStatus;
             }
         }
 
-        private decimal? _aggregatePercent;
+
         /// <summary>
-        /// Gets or sets the percentage of the battery
+        /// Gets the percentage remaining of the battery
         /// </summary>
-        public decimal? AggregatePercent
+        public decimal? PercentRemaining
         {
-            get { return _aggregatePercent; }
-            set
+            get
             {
-                _aggregatePercent = value;
-                // Notify change
-                OnPropertyChanged(nameof(AggregatePercent));
+                // If the MilliwattHours properties are null, assume 100 percent
+                var remaining = RemainingCap / (decimal?)DesignCap;
+                // Check status. If the status is idle, then report 100%
+                if (BatteryStatus == Windows.System.Power.BatteryStatus.Idle)
+                {
+                    remaining = 1;
+                }
+
+                return remaining;
             }
         }
 
-        public char AggregateBatteryIndicator
+        /// <summary>
+        /// Gets the effective percentage remaining.
+        /// </summary>
+        public decimal? EffectivePercentRemaining
+        {
+            get
+            {
+                // If the MilliwattHours properties are null, assume 100 percent
+                var remaining = RemainingCap / (decimal?)FullChargeCap;
+                // Check status. If the status is idle, then report 100%
+                if (BatteryStatus == Windows.System.Power.BatteryStatus.Idle)
+                {
+                    remaining = 1;
+                }
+
+                return remaining;
+            }
+        }
+
+        /// <summary>
+        /// Gets the indicator for the battery status
+        /// </summary>
+        public char BatteryIndicator
         {
             get
             {
                 // Get the battery status
-                var index = (int)(AggregatePercent.GetValueOrDefault() / 10);
+                var index = (int)Math.Round(EffectivePercentRemaining.GetValueOrDefault() * 100 / 10, 0);
 
                 // If the status is idle, index is 0
-                if (AggregateStatus == Windows.System.Power.BatteryStatus.Idle)
+                if (BatteryStatus == Windows.System.Power.BatteryStatus.Idle)
                 {
                     index = 0;
                 }
 
                 // Get indicator
-                var indicator = _batteryIndicators[(int)AggregateStatus][index];
+                var indicator = _batteryIndicators[(int)BatteryStatus][index];
 
                 return indicator;
 
             }
         }
 
-        /// <summary>
-        /// Gets a formatted string of the AggregatePercent
-        /// </summary>
-        public string FormattedAggregatePercent
-        {
-            get
-            {
-                if (AggregatePercent != null)
-                {
-                    return $"({AggregatePercent}%)";
-                }
-                else { return null; }
-            }
-        }
 
         /// <summary>
         /// Gets the overall efficiency of the battery
@@ -183,25 +237,28 @@ namespace BatteryHealth.Models
         {
             get
             {
-                return AggregateFullChargeCap / (double?)AggregateDesignCap;
+                return FullChargeCap / (double?)DesignCap;
             }
         }
 
+        /// <summary>
+        /// Gets the efficiency status message
+        /// </summary>
         public string EfficiencyStatus
         {
             get
             {
                 if (Efficiency != null && Efficiency <= 0.25)
                 {
-                    return $"Your battery can only hold {Efficiency * 100}% of its designed capacity. Please replace your battery.";
+                    return $"Your battery can only hold {Efficiency:P2} of its designed capacity. Please replace your battery.";
                 }
                 else if (Efficiency != null && Efficiency <= 0.50)
                 {
-                    return $"Your battery can only hold {Efficiency * 100}% of its designed capacity. Consider replacing your battery.";
+                    return $"Your battery can only hold {Efficiency:P2} of its designed capacity. Consider replacing your battery.";
                 }
                 else
                 {
-                    return $"Your battery is holding {Efficiency * 100}% of its designed capacity.";
+                    return $"Your battery is holding {Efficiency:P2} of its designed capacity.";
                 }
             }
         }
@@ -213,44 +270,44 @@ namespace BatteryHealth.Models
         {
             get
             {
-                // FF4AFF7B
+                // F
                 if (Efficiency != null && Efficiency <= 0.25)
                 {
-                    // Critical
+                    // Critical #FFC70000
                     return new Indicator()
                     {
                         Symbol = (char)0xE996,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x4A, 0x4A)),
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xC7, 0x00, 0x00)),
                         Label = "Critical"
-                    }; 
+                    };
                 }
                 else if (Efficiency != null && Efficiency <= 0.50)
                 {
-                    // Poor
+                    // Poor #FFC77F00
                     return new Indicator()
                     {
-                        Symbol = (char)0xE8C9,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xA4, 0x4A)),
+                        Symbol = (char)0xE730,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xC7, 0x7F, 0x00)),
                         Label = "Poor"
                     };
                 }
                 else if (Efficiency != null && Efficiency <= 0.50)
                 {
-                    // Fair
+                    // Fair #FF00C724
                     return new Indicator()
                     {
-                        Symbol = (char)0xE76E,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x4A, 0xFF, 0x7B)),
+                        Symbol = (char)0xE8E1,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0xC7, 0x24)),
                         Label = "Fair"
                     };
                 }
                 else
                 {
-                    // Good
+                    // Good #FF00C724
                     return new Indicator()
                     {
-                        Symbol = (char)0xE899,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x4A, 0xFF, 0x7B)),
+                        Symbol = (char)0xE76E,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0xC7, 0x24)),
                         Label = "Good"
                     };
                 }
@@ -263,9 +320,6 @@ namespace BatteryHealth.Models
 
         public OverviewPageViewModel()
         {
-            // Load aggregate battery report
-            GetAggregateBatteryReport();
-
             // Battery indicators
             _batteryIndicators = new[]
             {
@@ -306,6 +360,9 @@ namespace BatteryHealth.Models
                     (char)0xEBB5,
                 }
             };
+
+            // Load aggregate battery report
+            GetAggregateBatteryReport();
         }
 
         #endregion
@@ -326,6 +383,7 @@ namespace BatteryHealth.Models
             {
                 // Set the report
                 var report = battery.GetReport();
+                // Load report
                 GetAggregateBatteryStatus(report);
                 // Listen for changes
                 battery.ReportUpdated += Battery_ReportUpdated;
@@ -353,7 +411,9 @@ namespace BatteryHealth.Models
                     // Update UI
                     BatteryDevices.Add(battery);
                 }
-                catch { /* Add error handling, as applicable */ }
+                catch
+                {
+                }
             }
 
         }
@@ -370,62 +430,19 @@ namespace BatteryHealth.Models
             }
 
             // Set properties
-            AggregateDesignCap = report.DesignCapacityInMilliwattHours ?? 1;
-            AggregateFullChargeCap = report.FullChargeCapacityInMilliwattHours ?? 1;
-            AggregateRemainingCap = report.RemainingCapacityInMilliwattHours ?? 1;
-            AggregateStatus = report.Status;
+            DesignCap = report.DesignCapacityInMilliwattHours;
+            FullChargeCap = report.FullChargeCapacityInMilliwattHours;
+            RemainingCap = report.RemainingCapacityInMilliwattHours;
+            ChargeRate = report.ChargeRateInMilliwatts;
+            BatteryStatus = report.Status;
 
-            // Set up chart series
-            //AggregateDetails = new BatteryDetail[]
-            //{
-            //    new BatteryDetail
-            //    {
-            //        Name = "Design Capacity (mWH)",
-            //        Value = AggregateDesignCap - AggregateFullChargeCap
-            //    },
-            //    new BatteryDetail
-            //    {
-            //        Name = "Full Charge Capacity (mWH)",
-            //        Value = AggregateFullChargeCap - AggregateRemainingCap
-            //    },
-            //    new BatteryDetail
-            //    {
-            //        Name = "Remaining Capacity (mWH)",
-            //        Value = AggregateRemainingCap
-            //    }
-            //};
-
-
-            // If the MilliwattHours properties are null, assume 100 percent
-            var remainingPercent = (decimal?)AggregateRemainingCap / (decimal?)AggregateFullChargeCap;
-
-            // Determine status
-            switch (AggregateStatus)
+            // Add to charge data
+            ChargeData.Add(new ChargeDetail()
             {
-                case Windows.System.Power.BatteryStatus.Charging:
-                    FormattedAggregateStatus = "Charging";
-                    break;
+                Time = DateTime.Now,
+                Value = report.ChargeRateInMilliwatts
+            });
 
-                case Windows.System.Power.BatteryStatus.Discharging:
-                    FormattedAggregateStatus = "Discharging";
-                    break;
-
-                case Windows.System.Power.BatteryStatus.Idle:
-                    FormattedAggregateStatus = "Not Charging";
-                    break;
-
-                case Windows.System.Power.BatteryStatus.NotPresent:
-                    FormattedAggregateStatus = "Not Present";
-                    break;
-
-                default:
-                    break;
-            }
-
-
-
-            // Calculate percentage
-            AggregatePercent = remainingPercent * 100;
         }
         #endregion
 
@@ -438,7 +455,7 @@ namespace BatteryHealth.Models
             {
                 // Update the report
                 var report = sender.GetReport();
-                // Determine status
+                // Get report info
                 GetAggregateBatteryStatus(report);
             });
 
