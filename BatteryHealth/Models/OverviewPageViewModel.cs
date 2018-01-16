@@ -291,7 +291,7 @@ namespace BatteryHealth.Models
                         Label = "Poor"
                     };
                 }
-                else if (Efficiency != null && Efficiency <= 0.50)
+                else if (Efficiency != null && Efficiency <= 0.75)
                 {
                     // Fair #FF00C724
                     return new Indicator()
